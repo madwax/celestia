@@ -23,6 +23,7 @@
 #include <QPaintDevice>
 #include <QMouseEvent>
 #include <QSettings>
+#include <QMessageBox>
 
 #ifndef DEBUG
 #  define G_DISABLE_ASSERT
@@ -79,7 +80,7 @@ const unsigned int DEFAULT_TEXTURE_RESOLUTION = medres;
 
 
 CelestiaGlWidget::CelestiaGlWidget(QWidget* parent, const char* /* name */, CelestiaCore* core) :
-    QGLWidget(parent)
+    QOpenGLWidget(parent)
 {
     setFocusPolicy(Qt::ClickFocus);
 
@@ -124,12 +125,43 @@ static GLContext::GLRenderPath getBestAvailableRenderPath(const GLContext& /*glc
 }
 
 
+static const char* initGLEW(GLenum& glewErr)
+{
+    glewErr = glewInit();
+    if (glewErr != GLEW_OK)
+    {
+        switch(glewErr)
+        {
+        case GLEW_ERROR_NO_GL_VERSION:
+            return "No OpenGL version.";
+        case GLEW_ERROR_GL_VERSION_10_ONLY:
+            return "Need OpenGL at least version 1.1";
+        case GLEW_ERROR_GLX_VERSION_11_ONLY:
+            return "Need GLX at least version 1.2";
+        default:
+            return"Unknown error";
+        }
+    }
+    return nullptr;
+}
+
 /*!
   Set up the OpenGL rendering state, and define display list
 */
 
 void CelestiaGlWidget::initializeGL()
 {
+    GLenum glewErr; 
+    const char* errMsg = initGLEW(glewErr);
+
+    if (glewErr != GLEW_OK)
+    {
+        QString s(_("Error initializing OpenGL extensions %1: %2.\n"
+                    "Graphics quality will be reduced."));
+        s = s.arg(glewErr).arg(errMsg);
+        QMessageBox::critical(0, "Celestia", s);
+    }
+
     if (!appCore->initRenderer())
     {
         // cerr << "Failed to initialize renderer.\n";

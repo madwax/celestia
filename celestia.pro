@@ -11,7 +11,8 @@ DEFINES += GIT_COMMIT=\\\"$$GIT_COMMIT\\\"
 
 QMAKE_CXXFLAGS += -std=c++11
 
-QT += opengl
+#QT += opengl
+QT += widgets
 QT += xml
 
 contains(DEFINES, TEST_MODEL) {
